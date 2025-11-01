@@ -7,7 +7,11 @@ export default function AdminDashboardPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ name: "", price: "" });
+  const [editData, setEditData] = useState({
+    name: "",
+    price: "",
+    category: "",
+  });
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // ✅ Fetch all products
@@ -74,26 +78,36 @@ export default function AdminDashboardPage() {
         <table className="min-w-full table-auto border-collapse">
           <thead className="bg-indigo-600 text-white text-left">
             <tr>
+              <th className="py-3 px-4">SL No</th>
               <th className="py-3 px-4">Image</th>
               <th className="py-3 px-4">Product Name</th>
+              <th className="py-3 px-4">Category</th>
               <th className="py-3 px-4">Price</th>
               <th className="py-3 px-4 text-center">Actions</th>
             </tr>
           </thead>
+
           <tbody>
-            {products.map((p) => (
+            {products.map((p, index) => (
               <tr key={p._id} className="border-b hover:bg-gray-100 transition">
+                {/* ✅ Serial Number */}
+                <td className="py-3 px-4 text-gray-700 font-medium">
+                  {index + 1}
+                </td>
+
+                {/* ✅ Product Image */}
                 <td className="py-3 px-4">
                   <Image
                     src={p.variants?.[0]?.images?.[0] || "/no-image.png"}
                     alt={p.name}
-                    width={64} // must specify width
-                    height={64} // must specify height
+                    width={64}
+                    height={64}
                     className="w-16 h-16 object-cover rounded-md border"
                     sizes="(max-width: 768px) 100vw, 64px"
                   />
                 </td>
 
+                {/* ✅ Product Name */}
                 <td className="py-3 px-4">
                   {editingId === p._id ? (
                     <input
@@ -109,6 +123,31 @@ export default function AdminDashboardPage() {
                   )}
                 </td>
 
+                {/* ✅ Category (Editable Dropdown) */}
+                <td className="py-3 px-4">
+                  {editingId === p._id ? (
+                    <select
+                      value={editData.category}
+                      onChange={(e) =>
+                        setEditData({ ...editData, category: e.target.value })
+                      }
+                      className="border px-2 py-1 rounded w-full"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="home">Home</option>
+                      <option value="beauty">Beauty</option>
+                      <option value="health">Health</option>
+                      <option value="fashion">Fashion</option>
+                    </select>
+                  ) : (
+                    <span className="text-gray-700 capitalize">
+                      {p.category || "—"}
+                    </span>
+                  )}
+                </td>
+
+                {/* ✅ Price */}
                 <td className="py-3 px-4">
                   {editingId === p._id ? (
                     <input
@@ -124,11 +163,12 @@ export default function AdminDashboardPage() {
                   )}
                 </td>
 
+                {/* ✅ Actions */}
                 <td className="py-3 px-4 flex justify-center gap-3">
                   {editingId === p._id ? (
                     <button
                       onClick={() => handleUpdate(p._id)}
-                      className="bg-green-600 text-white py-3 px-4 rounded hover:bg-green-700"
+                      className="bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700"
                     >
                       Save
                     </button>
@@ -136,9 +176,13 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={() => {
                         setEditingId(p._id);
-                        setEditData({ name: p.name, price: p.price });
+                        setEditData({
+                          name: p.name,
+                          price: p.price,
+                          category: p.category || "",
+                        });
                       }}
-                      className="text-blue-600 py-3 px-4 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800"
                     >
                       <Edit size={20} />
                     </button>
@@ -146,7 +190,7 @@ export default function AdminDashboardPage() {
 
                   <button
                     onClick={() => handleDelete(p._id)}
-                    className="text-red-600 hover:text-red-800 py-3 px-4"
+                    className="text-red-600 hover:text-red-800"
                   >
                     <Trash2 size={20} />
                   </button>

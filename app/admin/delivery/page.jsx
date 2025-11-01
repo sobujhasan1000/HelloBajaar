@@ -40,10 +40,12 @@ export default function DeliveredOrdersPage() {
         <p>No delivered orders found.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+          <table className="min-w-full bg-cyan-50 text-black rounded-lg overflow-hidden">
             <thead className="bg-green-500 text-white">
               <tr>
+                <th className="py-2 px-4 text-left">SL No</th>
                 <th className="py-2 px-4 text-left">Name</th>
+                <th className="py-2 px-4 text-left">Product</th>
                 <th className="py-2 px-4 text-left">Address</th>
                 <th className="py-2 px-4 text-left">Phone</th>
                 <th className="py-2 px-4 text-left">Total</th>
@@ -51,12 +53,38 @@ export default function DeliveredOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order._id} className="border-b">
+              {orders.map((order, index) => (
+                <tr
+                  key={order._id}
+                  className="border-b hover:bg-gray-100 transition"
+                >
+                  {/* Serial Number */}
+                  <td className="py-2 px-4 font-semibold">{index + 1}</td>
+
+                  {/* Customer Info */}
                   <td className="py-2 px-4">{order.customer.name}</td>
+
+                  {/* Product List */}
+                  <td className="py-2 px-4">
+                    {order.cart?.length > 0 ? (
+                      order.cart.map((product) => (
+                        <div key={product._id}>
+                          {product.name} = {product.quantity}
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 italic">No products</span>
+                    )}
+                  </td>
+
+                  {/* Address, Phone, Total */}
                   <td className="py-2 px-4">{order.customer.address}</td>
                   <td className="py-2 px-4">{order.customer.phone}</td>
-                  <td className="py-2 px-4">Tk {order.total}</td>
+                  <td className="py-2 px-4 font-medium text-green-700">
+                    Tk {order.total}
+                  </td>
+
+                  {/* Actions */}
                   <td className="py-2 px-4">
                     <button
                       onClick={() => deleteOrder(order._id)}

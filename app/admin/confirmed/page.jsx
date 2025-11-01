@@ -58,10 +58,12 @@ export default function ConfirmedOrdersPage() {
         <p>No confirmed orders found.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+          <table className="min-w-full bg-cyan-50 text-black rounded-lg overflow-hidden">
             <thead className="bg-blue-500 text-white">
               <tr>
+                <th className="py-2 px-4 text-left">SL No</th>
                 <th className="py-2 px-4 text-left">Name</th>
+                <th className="py-2 px-4 text-left">Product</th>
                 <th className="py-2 px-4 text-left">Address</th>
                 <th className="py-2 px-4 text-left">Phone</th>
                 <th className="py-2 px-4 text-left">Total</th>
@@ -69,13 +71,33 @@ export default function ConfirmedOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order._id} className="border-b">
+              {orders.map((order, index) => (
+                <tr
+                  key={order._id}
+                  className="border-b hover:bg-gray-100 transition"
+                >
+                  <td className="py-2 px-4 font-semibold">{index + 1}</td>
                   <td className="py-2 px-4">{order.customer.name}</td>
+
+                  {/* Product list */}
+                  <td className="py-2 px-4">
+                    {order.cart?.length > 0 ? (
+                      order.cart.map((product) => (
+                        <div key={product._id}>
+                          {product.name} = {product.quantity}
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 italic">No products</span>
+                    )}
+                  </td>
+
                   <td className="py-2 px-4">{order.customer.address}</td>
                   <td className="py-2 px-4">{order.customer.phone}</td>
-                  <td className="py-2 px-4">Tk {order.total}</td>
-                  <td className="py-2 px-4 flex gap-2">
+                  <td className="py-2 px-4 font-medium text-green-700">
+                    Tk {order.total}
+                  </td>
+                  <td className="py-2 px-4 flex flex-wrap gap-2">
                     <button
                       onClick={() => updateStatus(order._id, "delivered")}
                       className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"

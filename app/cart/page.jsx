@@ -5,8 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 
 export default function Cart() {
-  const router = useRouter(); // ✅ add this
-
+  const router = useRouter();
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
 
@@ -16,60 +15,92 @@ export default function Cart() {
   const [city, setCity] = useState("");
   const [deliveryCharge, setDeliveryCharge] = useState(0);
 
+  const [thankYouMessage, setThankYouMessage] = useState(""); // ✅ State for Thank You message
+
   // Load cart from localStorage
-  // useEffect(() => {
-  //   const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  //   setCart(savedCart);
-
-  //   const sum = savedCart.reduce(
-  //     (acc, item) => acc + item.price * item.quantity,
-  //     0
-  //   );
-  //   setTotal(sum);
-  // }, []);
-
   useEffect(() => {
     const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
     setCart(savedCart);
   }, []);
 
+  // Calculate total
   useEffect(() => {
     const sum = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
     setTotal(sum);
   }, [cart]);
 
+  // Quantity update
   const updateQuantity = (index, qty) => {
     const newCart = [...cart];
     newCart[index].quantity = qty;
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
   };
-  // item remove for cart page
+
+  // Remove item
   const removeItem = (index) => {
     const newCart = cart.filter((_, i) => i !== index);
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
-
-    // Dispatch event to notify other components (like Navbar)
     const cartEvent = new CustomEvent("cartUpdated", {
       detail: newCart.length,
     });
     window.dispatchEvent(cartEvent);
   };
 
-  // Calculate delivery charge based on city
+  // Delivery charge logic
   useEffect(() => {
     if (city === "Dhaka") setDeliveryCharge(80);
     else if (city === "Other") setDeliveryCharge(130);
     else setDeliveryCharge(0);
   }, [city]);
 
-  const handlePlaceOrder = async () => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    if (!name || !phone || !address || !city) {
-      alert("Please fill all customer details!");
-      return;
+  // Form validation
+  const validateForm = () => {
+    if (!name.trim()) {
+      alert("অনুগ্রহ করে নাম লিখুন।");
+      return false;
     }
+    if (name.length > 30) {
+      alert("নাম ৩০ অক্ষরের বেশি হতে পারবে না।");
+      return false;
+    }
+
+    if (!/^\d{11}$/.test(phone)) {
+      alert("মোবাইল নাম্বার অবশ্যই ১১ সংখ্যার হতে হবে।");
+      return false;
+    }
+
+    if (!address.trim()) {
+      alert("অনুগ্রহ করে ঠিকানা লিখুন।");
+      return false;
+    }
+    if (address.length > 100) {
+      alert("ঠিকানা ১০০ অক্ষরের বেশি হতে পারবে না।");
+      return false;
+    }
+
+    if (!city) {
+      alert("অনুগ্রহ করে শহর নির্বাচন করুন।");
+      return false;
+    }
+
+    return true;
+  };
+
+  // Phone input: only digits, max 11
+  const handlePhoneChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    if (digits.length <= 11) {
+      setPhone(digits);
+    }
+  };
+
+  // Place order
+  const handlePlaceOrder = async () => {
+    if (!validateForm()) return;
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
     const orderData = {
       customer: { name, phone, address, city },
@@ -81,13 +112,23 @@ export default function Cart() {
 
     try {
       await axios.post(`${backendUrl}/api/orders/create`, orderData);
-      alert(`Order placed successfully! Total: ${orderData.total} TK`);
-      // ✅ clear cart and update UI instantly
+
+      // ✅ Show Thank You message
+      setThankYouMessage(
+        `ধন্যবাদ ${name}! আপনার অর্ডার সফলভাবে গ্রহণ করা হয়েছে। মোট টাকা: ${orderData.total} TK`
+      );
+
+      // Clear cart
       localStorage.removeItem("cart");
       setCart([]);
       const cartEvent = new CustomEvent("cartUpdated", { detail: 0 });
       window.dispatchEvent(cartEvent);
-      router.push("/"); // redirect to home page
+
+      // Clear form
+      setName("");
+      setPhone("");
+      setAddress("");
+      setCity("");
     } catch (err) {
       console.error(err);
       alert("Error placing order. Please try again.");
@@ -99,6 +140,13 @@ export default function Cart() {
       <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">
         🛒 Your Cart & Checkout
       </h1>
+
+      {/* ✅ Thank You Message */}
+      {thankYouMessage && (
+        <div className="bg-green-100 text-green-800 border border-green-400 p-4 rounded-lg mb-6 text-center font-semibold">
+          {thankYouMessage}
+        </div>
+      )}
 
       {cart.length === 0 ? (
         <div className="text-center py-10">
@@ -112,34 +160,40 @@ export default function Cart() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Right Side: Shipping Form */}
-          <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-2xl p-6 border shadow-sm hover:shadow-md transition text-pink-500">
+          {/* Shipping Form */}
+          <div className="bg-gradient-to-br from-blue-100 via-white to-green-100 rounded-2xl p-6 border shadow-sm hover:shadow-md transition text-pink-500">
             <h2 className="text-xl font-semibold mb-4 text-black border-b pb-2">
               🧾 Shipping Information
             </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-4 text-black">
               <input
                 type="text"
                 placeholder="আপনার নাম"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={30}
                 className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
+
               <input
                 type="tel"
-                placeholder="মোবাইল নাম্বার"
+                placeholder="মোবাইল নাম্বার (১১ ডিজিট)"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
+                maxLength={11}
                 className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
+
               <input
                 type="text"
                 placeholder="আপনার ঠিকানা"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                maxLength={100}
                 className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
+
               <select
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -151,7 +205,8 @@ export default function Cart() {
               </select>
             </div>
           </div>
-          {/* Left Side: Cart Items */}
+
+          {/* Cart Items */}
           <div className="bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition">
             <h2 className="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">
               🛍️ Your Items
@@ -179,16 +234,27 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQuantity(index, parseInt(e.target.value))
-                      }
-                      className="w-16 border rounded-lg p-1 text-center"
-                    />
+                  <div className="flex items-center gap-4 mt-3 sm:mt-0">
+                    <div className="flex items-center border rounded-lg overflow-hidden">
+                      <button
+                        onClick={() =>
+                          updateQuantity(index, Math.max(1, item.quantity - 1))
+                        }
+                        className="bg-black px-3 py-1 text-lg font-bold hover:bg-gray-300 text-white"
+                      >
+                        −
+                      </button>
+                      <span className="w-10 text-center text-black font-medium">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(index, item.quantity + 1)}
+                        className="bg-black px-3 py-1 text-lg font-bold hover:bg-gray-300 text-white"
+                      >
+                        +
+                      </button>
+                    </div>
+
                     <button
                       onClick={() => removeItem(index)}
                       className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 text-sm"
@@ -200,7 +266,6 @@ export default function Cart() {
               ))}
             </div>
 
-            {/* Total Section */}
             <div className="mt-6 space-y-1 text-gray-700">
               <p className="flex justify-between">
                 <span>Subtotal:</span>
@@ -219,7 +284,7 @@ export default function Cart() {
                 onClick={handlePlaceOrder}
                 className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white text-lg font-semibold py-3 rounded-xl transition-all"
               >
-                অর্ডার কনফার্ম
+                অর্ডার কনফার্ম করুন
               </button>
             </div>
           </div>
@@ -227,84 +292,4 @@ export default function Cart() {
       )}
     </div>
   );
-
-  // return (
-  //   <div className="max-w-4xl mx-auto mt-8 px-4">
-  //     <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-  //       🛒 Your Shopping Cart
-  //     </h1>
-
-  //     {cart.length === 0 ? (
-  //       <div className="text-center py-12 bg-gray-50 rounded-xl shadow-sm">
-  //         <p className="text-gray-600 text-lg">
-  //           Your cart is empty.{" "}
-  //           <Link
-  //             href="/products"
-  //             className="text-green-600 font-semibold underline hover:text-green-700"
-  //           >
-  //             Shop now
-  //           </Link>
-  //           .
-  //         </p>
-  //       </div>
-  //     ) : (
-  //       <div className="space-y-4">
-  //         {cart.map((item, index) => (
-  //           <div
-  //             key={index}
-  //             className="flex flex-col md:flex-row justify-between items-center bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition"
-  //           >
-  //             {/* Product Info */}
-  //             <div className="flex items-center space-x-4 w-full md:w-auto">
-  //               <img
-  //                 src={item.image}
-  //                 alt={item.name}
-  //                 className="w-24 h-24 object-cover rounded-xl border"
-  //               />
-  //               <div>
-  //                 <h2 className="font-semibold text-gray-800 text-lg">
-  //                   {item.name}
-  //                 </h2>
-  //                 <p className="text-gray-600">${item.price.toFixed(2)}</p>
-  //               </div>
-  //             </div>
-
-  //             {/* Quantity + Remove */}
-  //             <div className="flex items-center space-x-3 mt-3 md:mt-0">
-  //               <input
-  //                 type="number"
-  //                 min="1"
-  //                 value={item.quantity}
-  //                 onChange={(e) =>
-  //                   updateQuantity(index, parseInt(e.target.value))
-  //                 }
-  //                 className="w-16 border border-gray-300 rounded-lg text-center p-1 focus:outline-none focus:ring-2 focus:ring-green-400"
-  //               />
-  //               <button
-  //                 onClick={() => removeItem(index)}
-  //                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-lg font-medium"
-  //               >
-  //                 Remove
-  //               </button>
-  //             </div>
-  //           </div>
-  //         ))}
-
-  //         {/* Total Section */}
-  //         <div className="mt-8 bg-white p-4 rounded-xl shadow-md flex flex-col md:flex-row justify-between items-center">
-  //           <h2 className="text-2xl font-bold text-gray-800">
-  //             Total: ${total.toFixed(2)}
-  //           </h2>
-
-  //           <Link
-  //             href="/checkout"
-  //             className="mt-4 md:mt-0 bg-green-500 text-white text-lg px-6 py-2 rounded-xl hover:bg-green-600 transition font-semibold"
-  //           >
-  //             Proceed to Checkout →
-  //           </Link>
-  //         </div>
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 }

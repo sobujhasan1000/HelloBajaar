@@ -50,6 +50,8 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold text-white mb-3">Contact</h3>
           <p className="text-sm">📍 Dhaka, Bangladesh</p>
+          <p className="text-sm"> and</p>
+          <p className="text-sm">📍 Natore, Bangladesh</p>
           <p className="text-sm">📞 +880 01849-666237</p>
           <p className="text-sm">✉ hellobajar@gmail.com</p>
         </div>
